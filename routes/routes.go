@@ -14,6 +14,7 @@ func (r Router) SetupRoutes(e *echo.Echo, db *sql.DB) {
 	// e.POST("/login", ac.Login)
 
 	uc := controllers.UserController{DB: db}
+	e.POST("/login", uc.Login)
 	e.GET("/users", uc.FindAll)
 	e.POST("/users", uc.Insert)
 }

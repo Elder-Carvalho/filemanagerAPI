@@ -1,12 +1,21 @@
 package structs
 
+import (
+	"github.com/dgrijalva/jwt-go"
+)
+
 type DefaultResponse struct {
-	Status  int         `json:"status"`
+	Status  int64       `json:"status"`
 	Data    interface{} `json:"data"`
 	Message string      `json:"message"`
 }
 
-type ErrorReponse struct {
+type ErrorResponse struct {
 	Status  int    `json:"status"`
 	Message string `json:"message"`
+}
+
+type Token struct {
+	ID int64 `json:"id"`
+	jwt.StandardClaims
 }

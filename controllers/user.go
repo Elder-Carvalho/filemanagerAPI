@@ -18,43 +18,42 @@ type UserController struct {
 	DB *sql.DB
 }
 
+func getErrorReponse(c echo.Context, message string) error {
+	return c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+		Status:  http.StatusInternalServerError,
+		Message: message})
+}
+
+func getSuccessResponse(c echo.Context, data interface{}, message string) error {
+	return c.JSON(http.StatusInternalServerError, structs.DefaultResponse{
+		Status:  http.StatusOK,
+		Data:    data,
+		Message: message})
+}
+
 func (u UserController) FindAll(c echo.Context) error {
 	ur := repository.UserRepository{DB: u.DB}
 	users, err := ur.FindAll()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, structs.ErrorReponse{
-			Status:  http.StatusInternalServerError,
-			Message: defaultErrMsg})
+		return getErrorReponse(c, defaultErrMsg)
 	}
-	return c.JSON(http.StatusOK, structs.DefaultResponse{
-		Status:  http.StatusOK,
-		Data:    users,
-		Message: ""})
+	return getSuccessResponse(c, users, "")
 }
 
 func (u UserController) Insert(c echo.Context) error {
 	ur := repository.UserRepository{DB: u.DB}
 	user := new(models.User)
 	if err := c.Bind(user); err != nil {
-		return c.JSON(http.StatusInternalServerError, structs.ErrorReponse{
-			Status:  http.StatusInternalServerError,
-			Message: defaultErrMsg})
+		return getErrorReponse(c, defaultErrMsg)
 	}
 	lastInsertID, err := ur.Insert(user)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, structs.ErrorReponse{
-			Status:  http.StatusConflict,
-			Message: defaultErrMsg})
+		return getErrorReponse(c, defaultErrMsg)
 	}
 	if lastInsertID == 0 {
-		return c.JSON(http.StatusInternalServerError, structs.ErrorReponse{
-			Status:  http.StatusConflict,
-			Message: "Este usuário já está cadastrado."})
+		return getErrorReponse(c, "Este usuário já está cadastrado.")
 	}
-	return c.JSON(http.StatusOK, structs.DefaultResponse{
-		Status:  http.StatusOK,
-		Data:    map[string]int64{"lastInsertedID": lastInsertID},
-		Message: ""})
+	return getSuccessResponse(c, map[string]int64{"lastInsertedID": lastInsertID}, "")
 }
 
 func (u UserController) Login(c echo.Context) error {
@@ -62,12 +61,21 @@ func (u UserController) Login(c echo.Context) error {
 	fmt.Println(ur)
 	user := new(models.User)
 	if err := c.Bind(user); err != nil {
-		return c.JSON(http.StatusInternalServerError, structs.ErrorReponse{
-			Status:  http.StatusInternalServerError,
-			Message: defaultErrMsg})
+		return getErrorReponse(c, defaultErrMsg)
 	}
-	return c.JSON(http.StatusOK, structs.DefaultResponse{
-		Status:  http.StatusInternalServerError,
-		Data:    []int{1, 2},
-		Message: ""})
+
+	userResult, err := ur.Login(user.Email, user.Password)
+	if err != 0 {
+		if err == 1 {
+			return getErrorReponse(c, defaultErrMsg)
+		} else if err == 2 {
+			return getErrorReponse(c, "Usuário não encontrado.")
+		} else if err == 3 {
+			return getErrorReponse(c, defaultErrMsg)
+		} else if err == 4 {
+			return getErrorReponse(c, "Senha incorreta.")
+		}
+	}
+
+	return getSuccessResponse(c, userResult, "")
 }
